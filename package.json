@@ -1,0 +1,17 @@
+{
+  "name": "multiple-model-util",
+  "version": "1.0.0",
+  "description": "Utility Class for loading models in sequence for Forge Viewer",
+  "main": "MultipleModelUtil.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Eason Kang <eason.kang@autodesk.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^5.16.0",
+    "eslint-config-airbnb-base": "^13.1.0",
+    "eslint-plugin-import": "^2.17.1"
+  }
+}

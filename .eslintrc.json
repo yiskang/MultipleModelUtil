@@ -1,0 +1,22 @@
+{
+  "env": {
+      "browser": true,
+      "es6": true
+  },
+  "extends": "airbnb-base",
+  "globals": {
+      "Atomics": "readonly",
+      "SharedArrayBuffer": "readonly",
+      "THREE": true,
+      "Autodesk": true
+  },
+  "parserOptions": {
+      "ecmaVersion": 2018
+  },
+  "rules": {
+      "linebreak-style": [
+          "error",
+          "windows"
+      ]
+  }
+}
