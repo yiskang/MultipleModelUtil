@@ -63,6 +63,7 @@ class MultipleModelUtil {
 
         // Load model
         this.loadModelPromised(
+          data,
           doc,
           onLoadModelSuccess,
           onLoadModelError
@@ -117,7 +118,7 @@ class MultipleModelUtil {
    * @param {Function} onLoadModelSuccess Success callback function that will be called while the model was loaded by the Forge Viewer.
    * @param {Function} onLoadModelError Error callback function that will be called while loading model was failed.
    */
-  loadModelPromised( doc, onLoadModelSuccess, onLoadModelError ) {
+  loadModelPromised( data, doc, onLoadModelSuccess, onLoadModelError ) {
     const rootItem = doc.getRoot();
     const filter = { type: 'geometry', role: '3d' };
     const viewables = rootItem.search( filter );
@@ -130,23 +131,26 @@ class MultipleModelUtil {
     const initialViewable = viewables[0];
 
     const loadOptions = {
-      sharedPropertyDbPath: doc.getPropertyDbPath()
+      sharedPropertyDbPath: doc.getPropertyDbPath(),
+      modelNameOverride: data.name
     };
 
     const viewer = this.viewer;
 
     // If no model was loaded, start the viewer and load model together
-    if( !viewer.model ) {
-      viewer.startWithDocumentNode( doc, initialViewable, loadOptions )
-        .then( onLoadModelSuccess )
-        .catch( onLoadModelError );
-    } else { //!<<< Load model with align option
-      loadOptions.globalOffset = viewer.model.getData().globalOffset;
-      loadOptions.keepCurrentModels = true;
-
-      viewer.loadDocumentNode( doc, initialViewable, loadOptions )
+    if( !viewer.model && !viewer.started ) {
+      return viewer.startWithDocumentNode( doc, initialViewable, loadOptions )
         .then( onLoadModelSuccess )
         .catch( onLoadModelError );
     }
+
+    if( viewer.model ) {
+      loadOptions.globalOffset = viewer.model.getData().globalOffset;
+      loadOptions.keepCurrentModels = true;
+    }
+
+    viewer.loadDocumentNode( doc, initialViewable, loadOptions )
+      .then( onLoadModelSuccess )
+      .catch( onLoadModelError );
   }
 }
