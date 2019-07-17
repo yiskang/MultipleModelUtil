@@ -14,8 +14,8 @@ A reversion of this official blog: [Aggregate multi models in sequence in Forge 
 1. Include libraries
 
 ```HTML
-<link rel="stylesheet" href="https://developer.api.autodesk.com/viewingservice/v1/viewers/style.min.css?v=6.5.*" type="text/css">
-<script src="https://developer.api.autodesk.com/viewingservice/v1/viewers/viewer3D.js?v=6.5.*"></script>
+<link rel="stylesheet" href="https://developer.api.autodesk.com/viewingservice/v1/viewers/style.min.css?v=7.0.*" type="text/css">
+<script src="https://developer.api.autodesk.com/viewingservice/v1/viewers/viewer3D.js?v=7.0.*"></script>
 <script src="MultipleModelUtil.js"></script>
 ```
 
