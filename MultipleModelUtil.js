@@ -131,7 +131,6 @@ class MultipleModelUtil {
     const initialViewable = viewables[0];
 
     const loadOptions = {
-      sharedPropertyDbPath: doc.getPropertyDbPath(),
       modelNameOverride: data.name
     };
 
