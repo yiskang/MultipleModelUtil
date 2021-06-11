@@ -15,15 +15,100 @@
 // UNINTERRUPTED OR ERROR FREE.
 //
 // Utility Class for loading models in sequence for Forge Viewer
-// by Eason Kang - Autodesk Developer Network (ADN)
+// by Eason Kang - Autodesk Forge Partner Development (FPD)
 //
+
+const MultipleModelAlignmentType = {
+  CenterToCenter: 0,
+  OriginToOrigin: 1,
+  ShareCoordinates: 2,
+  Custom: 3
+};
+
 class MultipleModelUtil {
   /**
+   * @type {Viewer3D} The Forge Viewer instance
+   * @private
+   */
+  #viewer = null;
+
+  /**
+   * @type {Object} options The alignment setup
+   * @private
+   */
+  #options = null;
+
+  /**
    * @param {Viewer3D} viewer The Forge Viewer instance
+   * @param {Object} options The alignment setup
+   * @param {MultipleModelAlignmentType} [options.alignment] The alignment type: CenterToCenter, OriginToOrigin, ShareCoordinates, or Custom
+   * @param {function} [options.getCustomLoadOptions] Allows for applying custom options to be used for all model loading. The callback returns an options object that is applied by default in all model-load calls. The signature should look like: function(bubble, data) => Object
+   * @param {string} [options.viewerUnits] - If specified, all models are re-scaled from model units to this unit. Must be a GNU unit format string, e.g. "m".
    * @constructor
    */
-  constructor( viewer ) {
-    this.viewer = viewer;
+  constructor(viewer, options) {
+    this.#viewer = viewer;
+
+    options = options || { alignment: MultipleModelAlignmentType.OriginToOrigin };
+    this.#validateOptions(options);
+
+    this.#options = options;
+  }
+
+  /**
+   * Check if input is valid
+   * @param {Object} opts The alignment setup
+   * @property {MultipleModelAlignmentType} [options.alignment] The alignment type: CenterToCenter, OriginToOrigin, ShareCoordinates, or Custom
+   * @property {function} [options.getCustomLoadOptions] Allows for applying custom options to be used for all model loading. The callback returns an options object that is applied by default in all model-load calls. The signature should look like: function(bubble, data) => Object
+   * @property {string} [options.viewerUnits] - If specified, all models are re-scale
+   * @returns {bool} False if the input options is invalid
+   * @private
+   */
+  #isValidOptions(opts) {
+    if (!opts || !opts.alignment || !Object.values(MultipleModelAlignmentType).includes(opts.alignment)) return false;
+
+    if (opts.alignment === MultipleModelAlignmentType.Custom) {
+      if (!(opts.getCustomLoadOptions instanceof Function)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Check if input is valid 
+   * @param {Object} opts The alignment setup
+   * @property {MultipleModelAlignmentType} [options.alignment] The alignment type: CenterToCenter, OriginToOrigin, ShareCoordinates, or Custom
+   * @property {function} [options.getCustomLoadOptions] Allows for applying custom options to be used for all model loading. The callback returns an options object that is applied by default in all model-load calls. The signature should look like: function(bubble, data) => Object
+   * @property {string} [options.viewerUnits] - If specified, all models are re-scale
+   * @throws Will throw an error if input is invalid
+   * @private
+   */
+  #validateOptions(opts) {
+    if (!this.#isValidOptions(opts))
+      throw new Error(`[MultipleModelUtil]: Invalid options or invalid \`options.getCustomLoadOptions\` while using \`MultipleModelAlignmentType.Custom\``);
+  }
+
+  /**
+   * @type {Object} options The alignment setup
+   * @property {MultipleModelAlignmentType} [options.alignment] The alignment type: CenterToCenter, OriginToOrigin, ShareCoordinates, or Custom
+   * @property {function} [options.getCustomLoadOptions] Allows for applying custom options to be used for all model loading. The callback returns an options object that is applied by default in all model-load calls. The signature should look like: function(bubble, data) => Object
+   * @property {string} [options.viewerUnits] - If specified, all models are re-scale
+   */
+  get options() {
+    return this.#options;
+  }
+
+  /**
+   * @param {Object} opts The alignment setup
+   * @property {MultipleModelAlignmentType} [options.alignment] The alignment type: CenterToCenter, OriginToOrigin, ShareCoordinates, or Custom
+   * @property {function} [options.getCustomLoadOptions] Allows for applying custom options to be used for all model loading. The callback returns an options object that is applied by default in all model-load calls. The signature should look like: function(bubble, data) => Object
+   * @property {string} [options.viewerUnits] - If specified, all models are re-scale
+   */
+  set options(opts) {
+    this.#validateOptions(opts);
+    this.#options = opts;
   }
 
   /**
@@ -31,15 +116,15 @@ class MultipleModelUtil {
    * @param {Object[]} data Model data to be loaded, e.g. [ { name: 'house.rvt', urn: 'dXJuOmFkc2sub2JqZWN0c....' } ]
    * @returns {Promise}
    */
-  processModels( data ) {
+  processModels(data) {
     //process each promise
     //refer to http://jsfiddle.net/jfriend00/h3zaw8u8/
-    const promisesInSequence = ( tasks, callback ) => {
+    const promisesInSequence = (tasks, callback) => {
       const results = [];
-      return tasks.reduce( ( p, item ) => {
-        return p.then( () => {
-          return callback( item ).then( ( data ) => {
-            results.push( data );
+      return tasks.reduce((p, item) => {
+        return p.then(() => {
+          return callback(item).then((data) => {
+            results.push(data);
             return results;
           });
         });
@@ -47,7 +132,7 @@ class MultipleModelUtil {
     };
 
     //start to process
-    return promisesInSequence( data, ( d ) => this.loadDocumentPromised( d ) );
+    return promisesInSequence(data, (d) => this.loadDocumentPromised(d));
   }
 
   /**
@@ -55,51 +140,53 @@ class MultipleModelUtil {
    * @param {Object} data Model data to be loaded, e.g. { name: 'house.rvt', urn: 'dXJuOmFkc2sub2JqZWN0c....' }
    * @returns {Promise} Loaded viewer model
    */
-  loadDocumentPromised( data ) {
-    return new Promise(( resolve, reject ) => {
+  loadDocumentPromised(data) {
+    return new Promise((resolve, reject) => {
 
-      const onDocumentLoadSuccess = ( doc ) => {
-        console.log( `%cDocument for \`${data.name}\` Load Succeeded!`, 'color: blue' );
+      const onDocumentLoadSuccess = (doc) => {
+        console.log(`%cDocument for \`${data.name}\` Load Succeeded!`, 'color: blue');
 
-        // Load model
-        this.loadModelPromised(
-          data,
-          doc,
-          onLoadModelSuccess,
-          onLoadModelError
-        );
+        doc.downloadAecModelData(() => {
+          // Load model
+          this.loadModelPromised(
+            data,
+            doc,
+            onLoadModelSuccess,
+            onLoadModelError
+          );
+        });
       }
 
-      const onDocumentLoadFailure = ( error ) => {
-        console.error( `Document for \`${data.name}\` Load Failure, error: \`${error}\`` );
+      const onDocumentLoadFailure = (error) => {
+        console.error(`Document for \`${data.name}\` Load Failure, error: \`${error}\``);
       }
 
-      const onLoadModelSuccess = ( model ) => {
-        console.log( `%cModel for \`${data.name}\` Load Succeeded!`, 'color: blue' );
+      const onLoadModelSuccess = (model) => {
+        console.log(`%cModel for \`${data.name}\` Load Succeeded!`, 'color: blue');
 
-        this.viewer.addEventListener(
+        this.#viewer.addEventListener(
           Autodesk.Viewing.GEOMETRY_LOADED_EVENT,
           onGeometriesLoaded
         );
       }
 
-      const onLoadModelError = ( error ) => {
+      const onLoadModelError = (error) => {
         const msg = `Model for \`${data.name}\` Load Failure, error: \`${error}\``;
-        console.error( msg );
+        console.error(msg);
 
-        reject( msg );
+        reject(msg);
       }
 
-      const onGeometriesLoaded = ( event ) => {
-        this.viewer.removeEventListener(
+      const onGeometriesLoaded = (event) => {
+        this.#viewer.removeEventListener(
           Autodesk.Viewing.GEOMETRY_LOADED_EVENT,
           onGeometriesLoaded
         );
 
         const msg = `Geometries for \`${data.name}\` Loaded`;
 
-        console.log( `%c${msg}`, 'color: blue' );
-        resolve( { msg, model: event.model } );
+        console.log(`%c${msg}`, 'color: blue');
+        resolve({ msg, model: event.model });
       }
 
       // Main: Load Forge derivative manifest
@@ -118,38 +205,73 @@ class MultipleModelUtil {
    * @param {Function} onLoadModelSuccess Success callback function that will be called while the model was loaded by the Forge Viewer.
    * @param {Function} onLoadModelError Error callback function that will be called while loading model was failed.
    */
-  loadModelPromised( data, doc, onLoadModelSuccess, onLoadModelError ) {
-    const rootItem = doc.getRoot();
-    const filter = { type: 'geometry', role: '3d' };
-    const viewables = rootItem.search( filter );
+  loadModelPromised(data, doc, onLoadModelSuccess, onLoadModelError) {
+    let { viewRole, viewGuid, viewerUnits, name } = data;
+    viewRole = viewRole || '3d';
 
-    if( viewables.length === 0 ) {
-      return onLoadModelError( 'Document contains no viewables.' );
+    const rootItem = doc.getRoot();
+    const filter = { type: 'geometry', role: viewRole };
+    if (viewGuid)
+      filter.viewableID = viewGuid;
+
+    const viewables = rootItem.search(filter);
+
+    if (viewables.length === 0) {
+      return onLoadModelError('Document contains no viewables.');
     }
+
+    const viewer = this.#viewer;
 
     // Take the first viewable out as the loading target
-    const initialViewable = viewables[0];
+    const bubble = viewables[0];
 
-    const loadOptions = {
-      modelNameOverride: data.name
+    let loadOptions = {
+      modelNameOverride: name,
+      applyScaling: viewerUnits
     };
 
-    const viewer = this.viewer;
+    let globalOffset = null;
 
-    // If no model was loaded, start the viewer and load model together
-    if( !viewer.model && !viewer.started ) {
-      return viewer.startWithDocumentNode( doc, initialViewable, loadOptions )
-        .then( onLoadModelSuccess )
-        .catch( onLoadModelError );
+    switch (this.#options.alignment) {
+      case MultipleModelAlignmentType.ShareCoordinates:
+        globalOffset = viewer.model?.getData().globalOffset;
+        const aecModelData = bubble.getAecModelData();
+        if (aecModelData) {
+          let tf = aecModelData && aecModelData.refPointTransformation;
+          let refPoint = tf ? { x: tf[9], y: tf[10], z: 0.0 } : { x: 0, y: 0, z: 0 };
+
+          const MaxDistSqr = 4.0e6;
+          const distSqr = globalOffset && THREE.Vector3.prototype.distanceToSquared.call(refPoint, globalOffset);
+          if (!globalOffset || distSqr > MaxDistSqr) {
+            globalOffset = new THREE.Vector3().copy(refPoint);
+          }
+        }
+
+        loadOptions.applyRefPoint = true;
+        loadOptions.globalOffset = globalOffset;
+        break;
+      case MultipleModelAlignmentType.OriginToOrigin:
+        globalOffset = viewer.model?.getData().globalOffset;
+        loadOptions.globalOffset = globalOffset;
+        break;
+      case MultipleModelAlignmentType.Custom:
+        loadOptions = Object.assign({}, loadOptions, this.options.getCustomLoadOptions(bubble, data));
+        break;
     }
 
-    if( viewer.model ) {
-      loadOptions.globalOffset = viewer.model.getData().globalOffset;
+    // If no model was loaded, start the viewer and load model together
+    if (!viewer.model && !viewer.started) {
+      return viewer.startWithDocumentNode(doc, bubble, loadOptions)
+        .then(onLoadModelSuccess)
+        .catch(onLoadModelError);
+    }
+
+    if (viewer.model) {
       loadOptions.keepCurrentModels = true;
     }
 
-    viewer.loadDocumentNode( doc, initialViewable, loadOptions )
-      .then( onLoadModelSuccess )
-      .catch( onLoadModelError );
+    viewer.loadDocumentNode(doc, bubble, loadOptions)
+      .then(onLoadModelSuccess)
+      .catch(onLoadModelError);
   }
 }

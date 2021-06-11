@@ -1,12 +1,21 @@
 {
-  "name": "multiple-model-util",
-  "version": "1.0.0",
-  "description": "Utility Class for loading models in sequence for Forge Viewer",
+  "name": "forge-multiple-model-util",
+  "version": "2.0.0",
+  "description": "Utility Class for loading models in sequence for Autodesk Forge Viewer",
   "main": "MultipleModelUtil.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "keywords": [
+    "autodesk",
+    "forge",
+    "viewer",
+    "autodesk forge",
+    "autodesk forge viewer",
+    "forge viewer",
+    "multiple models",
+    "model aggregation"
+  ],
   "author": "Eason Kang <eason.kang@autodesk.com>",
   "license": "MIT",
   "devDependencies": {

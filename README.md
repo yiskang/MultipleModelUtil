@@ -1,7 +1,8 @@
 # MultipleModelUtil
 
 ![Platforms](https://img.shields.io/badge/platform-windows%20%7C%20osx%20%7C%20linux-lightgray.svg)
-[![License](http://img.shields.io/:license-mit-blue.svg)](http://opensource.org/licenses/MIT)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
+[![Viewer](https://img.shields.io/badge/Viewer-v7-green.svg)](http://developer.autodesk.com/)
 
 ## Overview
 
@@ -94,6 +95,67 @@ const models = [
 launchViewer( models.concat() );
 ```
 
+## Supported alignments
+
+This utility supports 4 kinds alignments as the below:
+
+- **Center to center**: the default way of the viewer.
+  ``` javascript
+  const util = new MultipleModelUtil( viewer );
+
+  util.options = {
+    alignment: MultipleModelAlignmentType.CenterToCenter
+  };
+  util.processModels( models );
+  ```
+
+- **Origin to origin**: Apply the globalOffset of the 1st model to others. (**This is the default alignment method of this utility**)
+  ``` javascript
+  const util = new MultipleModelUtil( viewer );
+
+  util.options = {
+    alignment: MultipleModelAlignmentType.OriginToOrigin
+  };
+  util.processModels( models );
+  ```
+
+- **By [Revit shared coordinates](https://knowledge.autodesk.com/support/revit-products/learn-explore/caas/CloudHelp/cloudhelp/2020/ENU/Revit-Collaborate/files/GUID-B82147D6-7EAB-48AB-B0C3-3B160E2DCD17-htm.html)**: Set up `applyRefpoint: true` and make the `globalOffset` to the `refPoint`.
+
+  ``` javascript
+  const util = new MultipleModelUtil( viewer );
+
+  util.options = {
+    alignment: MultipleModelAlignmentType.ShareCoordinates
+  };
+  util.processModels( models );
+  ```
+
+- **Custom alignment**: If the above alignments don't match your need, you can use this option to set up custom alignments.
+
+  ``` javascript
+  const util = new MultipleModelUtil( viewer );
+
+  util.options = {
+    alignment: MultipleModelAlignmentType.Custom,
+    getCustomLoadOptions: (bubble, data) => {
+      console.log(bubble, data);
+      
+      const tx = new THREE.Matrix4();
+      tx.setPosition({ x:1, y:100, z:1 }).scale({ x:2, y:2, z:2 });
+      return {
+        placementTransform: tx
+      };
+    }
+  };
+  util.processModels( models );
+  ```
+
+**Note.** Forge Viewer supports 3 kinds of Revit link methods as I shared [here](https://stackoverflow.com/a/67018048/7745569):
+
+- Origin to origin
+- Center to center
+- By shared coordinate
+
 ## License
 
 This sample is licensed under the terms of the [MIT License](http://opensource.org/licenses/MIT).
@@ -101,7 +163,4 @@ Please see the [LICENSE](LICENSE) file for full details.
 
 ## Written by
 
-Eason Kang <br />
-Forge Partner Development <br />
-https://developer.autodesk.com/ <br />
-https://forge.autodesk.com/blog <br />
+Eason Kang [@yiskang](https://twitter.com/yiskang), [Forge Partner Development](http://forge.autodesk.com)

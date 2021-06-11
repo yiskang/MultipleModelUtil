@@ -7,7 +7,7 @@
     <meta charset="utf-8">
 
     <!-- The Viewer CSS -->
-    <link rel="stylesheet" href="https://developer.api.autodesk.com/viewingservice/v1/viewers/style.min.css?v=7.0.*" type="text/css">
+    <link rel="stylesheet" href="https://developer.api.autodesk.com/viewingservice/v1/viewers/7.*/style.min.css" type="text/css">
     <style>
       * {
         margin: 0;
@@ -20,7 +20,7 @@
     <div id="viewer"></div>
 
     <!-- The Viewer JS -->
-    <script src="https://developer.api.autodesk.com/viewingservice/v1/viewers/viewer3D.js?v=7.0.*"></script>
+    <script src="https://developer.api.autodesk.com/viewingservice/v1/viewers/7.*/viewer3D.js"></script>
     <script src="../MultipleModelUtil.js"></script>
 
     <!-- Developer JS -->
@@ -53,6 +53,8 @@
 
           const options = {
             env: 'AutodeskProduction',
+            // env: 'MD20ProdUS', // TODO: for models uploaded to EMEA change this option to 'MD20ProdEU'
+            // api: 'D3S',
             getAccessToken: fetchForgeToken
             //accessToken: 'eyJhbGciOiJIUzI1NiIs....'
           };
@@ -63,10 +65,29 @@
             const viewerDiv = document.getElementById( 'viewer' );
 
             //initialize the viewer object
-            const viewer = new Autodesk.Viewing.Private.GuiViewer3D( viewerDiv );
+            const viewer = new Autodesk.Viewing.Private.GuiViewer3D( viewerDiv, { modelBrowserStartCollapsed: true, startCollapsed: true } );
 
             //load model one by one in sequence
             const util = new MultipleModelUtil( viewer );
+            // Use origin-to-origin alignment
+            // util.options = {
+            //   alignment: MultipleModelAlignmentType.OriginToOrigin
+            // };
+
+            // Use custom alignment
+            // util.options = {
+            //   alignment: MultipleModelAlignmentType.Custom,
+            //   getCustomLoadOptions: (bubble, data) => {
+            //     console.log(bubble, data);
+
+            //     const tx = new THREE.Matrix4();
+            //     tx.setPosition({ x:1, y:100, z:1 }).scale({ x:2, y:2, z:2 });
+            //     return {
+            //       placementTransform: tx
+            //     };
+            //   }
+            // };
+          
             util.processModels( models );
           });
         }
