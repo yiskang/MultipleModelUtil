@@ -119,7 +119,7 @@ This utility supports 4 kinds alignments as the below:
   util.processModels( models );
   ```
 
-- **By [Revit shared coordinates](https://knowledge.autodesk.com/support/revit-products/learn-explore/caas/CloudHelp/cloudhelp/2020/ENU/Revit-Collaborate/files/GUID-B82147D6-7EAB-48AB-B0C3-3B160E2DCD17-htm.html)**: Set up `applyRefpoint: true` and make the `globalOffset` to the `refPoint`.
+- **By [Revit shared coordinates](https://knowledge.autodesk.com/support/revit-products/learn-explore/caas/CloudHelp/cloudhelp/2020/ENU/Revit-Collaborate/files/GUID-B82147D6-7EAB-48AB-B0C3-3B160E2DCD17-htm.html)**: Set up `applyRefpoint: true` and make the `globalOffset` to the `refPoint`. (**[AEC model data](https://forge.autodesk.com/blog/consume-aec-data-which-are-model-derivative-api) is required**)
 
   ``` javascript
   const util = new MultipleModelUtil( viewer );
