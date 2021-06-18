@@ -19,10 +19,10 @@
 //
 
 const MultipleModelAlignmentType = {
-  CenterToCenter: 0,
-  OriginToOrigin: 1,
-  ShareCoordinates: 2,
-  Custom: 3
+  CenterToCenter: 1,
+  OriginToOrigin: 2,
+  ShareCoordinates: 3,
+  Custom: 4
 };
 
 class MultipleModelUtil {
