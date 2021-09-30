@@ -87,7 +87,14 @@
             //     };
             //   }
             // };
+
+            // Register AGGREGATE_GEOMETRY_LOADED_EVENT handler from MultipleModelUtil to know when all models's geometries are loaded completely
+            viewer.addEventListener(
+              MultipleModelUtil.AGGREGATE_GEOMETRY_LOADED_EVENT,
+              console.log
+            );
           
+            // Start loading models
             util.processModels( models );
           });
         }
