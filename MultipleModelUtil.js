@@ -18,7 +18,7 @@
 // by Eason Kang - Autodesk Forge Partner Development (FPD)
 //
 
-(function(parent) {
+(function (parent) {
   const MultipleModelAlignmentType = {
     CenterToCenter: 1,
     OriginToOrigin: 2,
@@ -27,6 +27,7 @@
   };
 
   const AGGREGATE_GEOMETRY_LOADED_EVENT = 'aggregateGeometryLoaded';
+  const AGGREGATE_PROGRESS_CHANGED_EVENT = 'aggregateProgressChanged';
 
   class MultipleModelUtil {
     /**
@@ -34,13 +35,13 @@
      * @private
      */
     #viewer = null;
-  
+
     /**
      * @type {Object} options The alignment setup
      * @private
      */
     #options = null;
-  
+
     /**
      * @param {Viewer3D} viewer The Forge Viewer instance
      * @param {Object} options The alignment setup
@@ -51,13 +52,13 @@
      */
     constructor(viewer, options) {
       this.#viewer = viewer;
-  
+
       options = options || { alignment: MultipleModelAlignmentType.OriginToOrigin };
       this.#validateOptions(options);
-  
+
       this.#options = options;
     }
-  
+
     /**
      * Check if input is valid
      * @param {Object} opts The alignment setup
@@ -69,16 +70,16 @@
      */
     #isValidOptions(opts) {
       if (!opts || !opts.alignment || !Object.values(MultipleModelAlignmentType).includes(opts.alignment)) return false;
-  
+
       if (opts.alignment === MultipleModelAlignmentType.Custom) {
         if (!(opts.getCustomLoadOptions instanceof Function)) {
           return false;
         }
       }
-  
+
       return true;
     }
-  
+
     /**
      * Check if input is valid 
      * @param {Object} opts The alignment setup
@@ -92,7 +93,7 @@
       if (!this.#isValidOptions(opts))
         throw new Error(`[MultipleModelUtil]: Invalid options or invalid \`options.getCustomLoadOptions\` while using \`MultipleModelAlignmentType.Custom\``);
     }
-  
+
     /**
      * @type {Object} options The alignment setup
      * @property {MultipleModelAlignmentType} [options.alignment] The alignment type: CenterToCenter, OriginToOrigin, ShareCoordinates, or Custom
@@ -102,7 +103,7 @@
     get options() {
       return this.#options;
     }
-  
+
     /**
      * @param {Object} opts The alignment setup
      * @property {MultipleModelAlignmentType} [options.alignment] The alignment type: CenterToCenter, OriginToOrigin, ShareCoordinates, or Custom
@@ -113,7 +114,7 @@
       this.#validateOptions(opts);
       this.#options = opts;
     }
-  
+
     /**
      * Process Forge URNs
      * @param {Object[]} data Model data to be loaded, e.g. [ { name: 'house.rvt', urn: 'dXJuOmFkc2sub2JqZWN0c....' } ]
@@ -133,7 +134,43 @@
           });
         }, Promise.resolve());
       };
-  
+
+      for (const d of data) {
+        d.percent = 0;
+      }
+
+      const progressUpdated = (event) => {
+        let modelDataIndex = data.findIndex(d => d.urn.includes(event.model.getData().urn));
+        if (modelDataIndex == -1) return;
+        if (event.state !== Autodesk.Viewing.ProgressState.LOADING) return;
+        if (data[modelDataIndex].percent >= 100) return;
+
+        data[modelDataIndex].percent = event.percent;
+
+        let rawPercents = data.map(d => d.percent)
+        let sumPercent = rawPercents.reduce((a, b) => a + b, 0);
+        let overallPercent = sumPercent / data.length;
+
+        //console.log('Debug Progress', event.model.getData().urn, event.percent, data.map(d => d.percent));
+
+        this.#viewer.fireEvent({
+          type: AGGREGATE_PROGRESS_CHANGED_EVENT,
+          percent: overallPercent,
+          rawPercents
+        });
+
+        if (overallPercent >= 100)
+          this.#viewer.removeEventListener(
+            Autodesk.Viewing.PROGRESS_UPDATE_EVENT,
+            progressUpdated
+          );
+      };
+
+      this.#viewer.addEventListener(
+        Autodesk.Viewing.PROGRESS_UPDATE_EVENT,
+        progressUpdated
+      );
+
       //start to process
       const results = await promisesInSequence(data, (d) => this.loadDocumentPromised(d));
       this.#viewer.fireEvent({
@@ -141,7 +178,7 @@
         models: results
       });
     }
-  
+
     /**
      * Promised function for loading Forge derivative manifest
      * @param {Object} data Model data to be loaded, e.g. { name: 'house.rvt', urn: 'dXJuOmFkc2sub2JqZWN0c....' }
@@ -149,10 +186,10 @@
      */
     loadDocumentPromised(data) {
       return new Promise((resolve, reject) => {
-  
+
         const onDocumentLoadSuccess = (doc) => {
           console.log(`%cDocument for \`${data.name}\` Load Succeeded!`, 'color: blue');
-  
+
           doc.downloadAecModelData(() => {
             // Load model
             this.loadModelPromised(
@@ -163,39 +200,39 @@
             );
           });
         }
-  
+
         const onDocumentLoadFailure = (error) => {
           console.error(`Document for \`${data.name}\` Load Failure, error: \`${error}\``);
         }
-  
+
         const onLoadModelSuccess = (model) => {
           console.log(`%cModel for \`${data.name}\` Load Succeeded!`, 'color: blue');
-  
+
           this.#viewer.addEventListener(
             Autodesk.Viewing.GEOMETRY_LOADED_EVENT,
             onGeometriesLoaded
           );
         }
-  
+
         const onLoadModelError = (error) => {
           const msg = `Model for \`${data.name}\` Load Failure, error: \`${error}\``;
           console.error(msg);
-  
+
           reject(msg);
         }
-  
+
         const onGeometriesLoaded = (event) => {
           this.#viewer.removeEventListener(
             Autodesk.Viewing.GEOMETRY_LOADED_EVENT,
             onGeometriesLoaded
           );
-  
+
           const msg = `Geometries for \`${data.name}\` Loaded`;
-  
+
           console.log(`%c${msg}`, 'color: blue');
           resolve({ name: data.name, model: event.model });
         }
-  
+
         // Main: Load Forge derivative manifest
         Autodesk.Viewing.Document.load(
           data.urn,
@@ -204,7 +241,7 @@
         );
       });
     }
-  
+
     /**
      * Promised function for loading model from the Forge derivative manifest.
      * By default, it loads the first model only.
@@ -213,32 +250,38 @@
      * @param {Function} onLoadModelError Error callback function that will be called while loading model was failed.
      */
     loadModelPromised(data, doc, onLoadModelSuccess, onLoadModelError) {
-      let { viewRole, viewGuid, viewerUnits, name } = data;
-      viewRole = viewRole || '3d';
-  
+      let { viewRole, viewGuid, viewerUnits, useMasterView, name } = data;
+      let bubble = null;
+
       const rootItem = doc.getRoot();
-      const filter = { type: 'geometry', role: viewRole };
-      if (viewGuid)
-        filter.viewableID = viewGuid;
-  
-      const viewables = rootItem.search(filter);
-  
-      if (viewables.length === 0) {
-        return onLoadModelError('Document contains no viewables.');
-      }
-  
       const viewer = this.#viewer;
-  
-      // Take the first viewable out as the loading target
-      const bubble = viewables[0];
-  
+
+      if (useMasterView) {
+        bubble = rootItem.getDefaultGeometry(true);
+      } else {
+        viewRole = viewRole || '3d';
+
+        const filter = { type: 'geometry', role: viewRole };
+        if (viewGuid)
+          filter.viewableID = viewGuid;
+
+        const viewables = rootItem.search(filter);
+
+        if (viewables.length === 0) {
+          return onLoadModelError('Document contains no viewables.');
+        }
+
+        // Take the first viewable out as the loading target
+        bubble = viewables[0];
+      }
+
       let loadOptions = {
         modelNameOverride: name,
         applyScaling: viewerUnits
       };
-  
+
       let globalOffset = null;
-  
+
       switch (this.#options.alignment) {
         case MultipleModelAlignmentType.ShareCoordinates:
           globalOffset = viewer.model?.getData().globalOffset;
@@ -246,14 +289,14 @@
           if (aecModelData) {
             let tf = aecModelData && aecModelData.refPointTransformation;
             let refPoint = tf ? { x: tf[9], y: tf[10], z: 0.0 } : { x: 0, y: 0, z: 0 };
-  
+
             const MaxDistSqr = 4.0e6;
             const distSqr = globalOffset && THREE.Vector3.prototype.distanceToSquared.call(refPoint, globalOffset);
             if (!globalOffset || distSqr > MaxDistSqr) {
               globalOffset = new THREE.Vector3().copy(refPoint);
             }
           }
-  
+
           loadOptions.applyRefPoint = true;
           loadOptions.globalOffset = globalOffset;
           break;
@@ -265,25 +308,26 @@
           loadOptions = Object.assign({}, loadOptions, this.options.getCustomLoadOptions(bubble, data));
           break;
       }
-  
+
       // If no model was loaded, start the viewer and load model together
       if (!viewer.model && !viewer.started) {
         return viewer.startWithDocumentNode(doc, bubble, loadOptions)
           .then(onLoadModelSuccess)
           .catch(onLoadModelError);
       }
-  
+
       if (viewer.model) {
         loadOptions.keepCurrentModels = true;
       }
-  
+
       viewer.loadDocumentNode(doc, bubble, loadOptions)
         .then(onLoadModelSuccess)
         .catch(onLoadModelError);
     }
   }
-  
+
   MultipleModelUtil.AGGREGATE_GEOMETRY_LOADED_EVENT = AGGREGATE_GEOMETRY_LOADED_EVENT;
+  MultipleModelUtil.AGGREGATE_PROGRESS_CHANGED_EVENT = AGGREGATE_PROGRESS_CHANGED_EVENT;
 
   //Expose to global
   parent.MultipleModelAlignmentType = MultipleModelAlignmentType;

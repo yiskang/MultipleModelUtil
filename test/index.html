@@ -1,112 +1,120 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Forge Viewer - Multiple model demo</title>
-    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=no" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge"> 
-    <meta charset="utf-8">
 
-    <!-- The Viewer CSS -->
-    <link rel="stylesheet" href="https://developer.api.autodesk.com/viewingservice/v1/viewers/7.*/style.min.css" type="text/css">
-    <style>
-      * {
-        margin: 0;
-        padding: 0;
-      }
-    </style>
-  </head>
+<head>
+  <title>Forge Viewer - Multiple model demo</title>
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=no" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta charset="utf-8">
 
-  <body>
-    <div id="viewer"></div>
+  <!-- The Viewer CSS -->
+  <link rel="stylesheet" href="https://developer.api.autodesk.com/viewingservice/v1/viewers/7.*/style.min.css" type="text/css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
+  </style>
+</head>
 
-    <!-- The Viewer JS -->
-    <script src="https://developer.api.autodesk.com/viewingservice/v1/viewers/7.*/viewer3D.js"></script>
-    <script src="../MultipleModelUtil.js"></script>
+<body>
+  <div id="viewer"></div>
 
-    <!-- Developer JS -->
-    <script>
-        function fetchForgeToken( callback ) {
-          fetch( 'https://127.0.0.1/api/forge/oauth/token', {
-            method: 'get',
-            headers: new Headers({ 'Content-Type': 'application/json' })
-          })
-          .then( ( response ) => {
-          if( response.status === 200 ) {
-              return response.json();
+  <!-- The Viewer JS -->
+  <script src="https://developer.api.autodesk.com/viewingservice/v1/viewers/7.*/viewer3D.js"></script>
+  <script src="../MultipleModelUtil.js"></script>
+
+  <!-- Developer JS -->
+  <script>
+    function fetchForgeToken(callback) {
+      fetch('https://127.0.0.1/api/forge/oauth/token', {
+        method: 'get',
+        headers: new Headers({ 'Content-Type': 'application/json' })
+      })
+        .then((response) => {
+          if (response.status === 200) {
+            return response.json();
           } else {
-              return Promise.reject(
-                new Error( `Failed to fetch token from server (status: ${response.status}, message: ${response.statusText})` )
-              );
-          }
-          })
-          .then( ( data ) => {
-            if( !data ) return Promise.reject( new Error( 'Empty token response' ) );
-
-            callback( data.access_token, data.expires_in );
-          })
-          .catch( ( error ) => console.error( error ) );
-        }
-
-        function launchViewer( models ) {
-          if( !models || models.length <= 0 )
-            return console.error( 'Empty model input' );
-
-          const options = {
-            env: 'AutodeskProduction',
-            // env: 'MD20ProdUS', // TODO: for models uploaded to EMEA change this option to 'MD20ProdEU'
-            // api: 'D3S',
-            getAccessToken: fetchForgeToken
-            //accessToken: 'eyJhbGciOiJIUzI1NiIs....'
-          };
-
-          Autodesk.Viewing.Initializer( options, function() {
-
-            //get the viewer div
-            const viewerDiv = document.getElementById( 'viewer' );
-
-            //initialize the viewer object
-            const viewer = new Autodesk.Viewing.Private.GuiViewer3D( viewerDiv, { modelBrowserStartCollapsed: true, startCollapsed: true } );
-
-            //load model one by one in sequence
-            const util = new MultipleModelUtil( viewer );
-            // Use origin-to-origin alignment
-            // util.options = {
-            //   alignment: MultipleModelAlignmentType.OriginToOrigin
-            // };
-
-            // Use custom alignment
-            // util.options = {
-            //   alignment: MultipleModelAlignmentType.Custom,
-            //   getCustomLoadOptions: (bubble, data) => {
-            //     console.log(bubble, data);
-
-            //     const tx = new THREE.Matrix4();
-            //     tx.setPosition({ x:1, y:100, z:1 }).scale({ x:2, y:2, z:2 });
-            //     return {
-            //       placementTransform: tx
-            //     };
-            //   }
-            // };
-
-            // Register AGGREGATE_GEOMETRY_LOADED_EVENT handler from MultipleModelUtil to know when all models's geometries are loaded completely
-            viewer.addEventListener(
-              MultipleModelUtil.AGGREGATE_GEOMETRY_LOADED_EVENT,
-              console.log
+            return Promise.reject(
+              new Error(`Failed to fetch token from server (status: ${response.status}, message: ${response.statusText})`)
             );
-          
-            // Start loading models
-            util.processModels( models );
+          }
+        })
+        .then((data) => {
+          if (!data) return Promise.reject(new Error('Empty token response'));
+
+          callback(data.access_token, data.expires_in);
+        })
+        .catch((error) => console.error(error));
+    }
+
+    function launchViewer(models) {
+      if (!models || models.length <= 0)
+        return console.error('Empty model input');
+
+      const options = {
+        env: 'AutodeskProduction',
+        //env: 'AutodeskProduction2', // SVF2
+        //api: 'streamingV2',  // SVF2
+        getAccessToken: fetchForgeToken
+        //accessToken: 'eyJhbGciOiJIUzI1NiIs....'
+      };
+
+      Autodesk.Viewing.Initializer(options, function () {
+
+        //get the viewer div
+        const viewerDiv = document.getElementById('viewer');
+
+        //initialize the viewer object
+        const viewer = new Autodesk.Viewing.Private.GuiViewer3D(viewerDiv, { modelBrowserStartCollapsed: true, startCollapsed: true });
+
+        //load model one by one in sequence
+        const util = new MultipleModelUtil(viewer);
+        // Use origin-to-origin alignment
+        // util.options = {
+        //   alignment: MultipleModelAlignmentType.OriginToOrigin
+        // };
+
+        // Use custom alignment
+        // util.options = {
+        //   alignment: MultipleModelAlignmentType.Custom,
+        //   getCustomLoadOptions: (bubble, data) => {
+        //     console.log(bubble, data);
+
+        //     const tx = new THREE.Matrix4();
+        //     tx.setPosition({ x:1, y:100, z:1 }).scale({ x:2, y:2, z:2 });
+        //     return {
+        //       placementTransform: tx
+        //     };
+        //   }
+        // };
+
+        // Register AGGREGATE_GEOMETRY_LOADED_EVENT handler from MultipleModelUtil to know when all models's geometries are loaded completely
+        viewer.addEventListener(
+          MultipleModelUtil.AGGREGATE_GEOMETRY_LOADED_EVENT,
+          console.log
+        );
+
+        // Register AGGREGATE_PROGRESS_CHANGED_EVENT handler from MultipleModelUtil to know the overall model loading progress
+        viewer.addEventListener(
+          MultipleModelUtil.AGGREGATE_PROGRESS_CHANGED_EVENT,
+          (event) => {
+            console.log('Overall loading progress:', `${event.percent.toFixed(3)}%`, event.rawPercents);
           });
-        }
 
-        const models = [
-          { name: '1.nwc', urn: 'urn:dXJuOmFkc2sud2lwcHJvZDpmcy5maWxlOnZmLlNpaHgxOTVuUVJDMHIyWXZUSVRuZFE/dmVyc2lvbj0x' },
-          { name: '2.nwc', urn: 'urn:dXJuOmFkc2sud2lwcHJvZDpmcy5maWxlOnZmLldVRHJ4ajZ6UTBPLTRrbWZrZ3ZoLUE/dmVyc2lvbj0x' },
-          { name: '3.nwc', urn: 'urn:dXJuOmFkc2sud2lwcHJvZDpmcy5maWxlOnZmLjRyZW5HRTNUU25xNHhYaW5xdWtyaWc/dmVyc2lvbj0x' }
-        ];
+        // Start loading models
+        util.processModels(models);
+      });
+    }
 
-        launchViewer( models.concat() );
-    </script>
-  </body>
+    const models = [
+      { name: '1.nwc', urn: 'urn:dXJuOmFkc2sud2lwcHJvZDpmcy5maWxlOnZmLlNpaHgxOTVuUVJDMHIyWXZUSVRuZFE/dmVyc2lvbj0x' },
+      { name: '2.nwc', urn: 'urn:dXJuOmFkc2sud2lwcHJvZDpmcy5maWxlOnZmLldVRHJ4ajZ6UTBPLTRrbWZrZ3ZoLUE/dmVyc2lvbj0x' },
+      { name: '3.nwc', urn: 'urn:dXJuOmFkc2sud2lwcHJvZDpmcy5maWxlOnZmLjRyZW5HRTNUU25xNHhYaW5xdWtyaWc/dmVyc2lvbj0x' }
+    ];
+
+    launchViewer(models.concat());
+  </script>
+</body>
+
 </html>
-
