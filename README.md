@@ -8,6 +8,8 @@
 
 Utility Class for loading models in sequence for [Forge Viewer](https://forge.autodesk.com/api/viewer-cover-page/).
 
+This video shows core concepts of this tool: https://youtu.be/nfHZLlWtQ-0?t=16
+
 A reversion of this official blog: [Aggregate multi models in sequence in Forge Viewer](https://forge.autodesk.com/blog/aggregate-multi-models-sequence-forge-viewer).
 
 ## Usage
